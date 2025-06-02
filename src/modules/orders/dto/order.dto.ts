@@ -32,6 +32,7 @@ export class OrderDto {
       'IN_TRANSIT',
       'DELIVERED',
       'CANCELLED',
+      'RETURNED',
     ],
     default: 'PENDING',
   })

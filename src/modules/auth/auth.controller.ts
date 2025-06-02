@@ -7,16 +7,15 @@ import {
   UseGuards,
   Res,
   Req,
+  Get,
+  HttpException,
 } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 
 import { LoginDto } from './dto/login.dto';
 
-// import { RefreshTokenDto } from './dto/refresh-token.dto';
-
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Request, Response } from 'express';
 
@@ -37,15 +36,15 @@ export class AuthController {
     const { accessToken, refreshToken } = await this.authService.login(dto);
 
     res.cookie('access_token', accessToken, {
-      httpOnly: true, // Block JavaScript access
-      secure: true, // HTTPS only
-      sameSite: 'strict', // Prevent CSRF
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      httpOnly: true,
+      // secure: true,
+      sameSite: 'strict',
+      maxAge: 1 * 60 * 1000, // 15 minutes
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
+      // secure: true,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -62,11 +61,43 @@ export class AuthController {
     await this.authService.logout(req.user.sub);
     return { message: 'Logged out' };
   }
+
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body() dto: RefreshTokenDto) {
-    {
-      return this.authService.refreshToken(dto.refreshToken);
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refresh successful' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async refreshToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+      throw new HttpException(
+        'Refresh token not found',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
+
+    const { accessToken } = await this.authService.refreshToken(refreshToken);
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      // secure: true,
+      sameSite: 'strict',
+      maxAge: 1 * 60 * 1000, // 1 minute
+    });
+
+    return { message: 'Token refreshed successfully' };
+  }
+
+  @Get('test-guard')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Test JWT guard' })
+  @ApiResponse({ status: 200, description: 'Guard test successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async testGuard() {
+    console.log('Guard test successful - User is authenticated');
+    return { message: 'Guard test successful' };
   }
 }

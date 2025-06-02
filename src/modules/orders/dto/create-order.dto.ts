@@ -19,6 +19,14 @@ export class CreateOrderDto {
   description?: string;
 
   @IsNotEmpty()
+  @IsString()
+  customerId?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  driverId?: string;
+
+  @IsNotEmpty()
   @IsNumber()
   price: number;
 
