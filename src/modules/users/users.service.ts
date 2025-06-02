@@ -12,6 +12,9 @@ import { PrismaService } from 'src/shared/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { UserQueryDto } from './dto/user-query.dto';
 import { Role } from '../auth/types/roles.enum';
+import { CreateAddressDto } from './dto/createAddressDto';
+import { ROUTING_KEYS } from 'src/shared/queue/queue.constants';
+import { QueueService } from 'src/shared/queue/queue.service';
 
 type UserCreateResponse = {
   id: string;
@@ -21,19 +24,34 @@ type UserCreateResponse = {
   role: string;
   createdAt?: Date;
   updatedAt?: Date;
+  addresses?: Array<{
+    id: string;
+    street: string;
+    street2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    latitude?: number;
+    longitude?: number;
+  }>;
 };
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private queueService: QueueService,
+  ) {}
 
   // Create
 
   async create(dto: CreateUserDto): Promise<UserCreateResponse> {
-    const { email, phoneNumber, firstName, password, ...rest } = dto;
-
+    const { email, phoneNumber, firstName, lastName, password, addresses } =
+      dto;
+    this.logger.log('Creating user with email', email);
     try {
       const existingUser = await this.prisma.user.findFirst({
         where: {
@@ -46,8 +64,16 @@ export class UsersService {
       });
 
       if (existingUser) {
+        this.logger.error(
+          'User already exists',
+          existingUser?.email === email
+            ? 'A user with this email already exists'
+            : 'A user with this phone number already exists',
+        );
         throw new ConflictException(
-          existingUser?.email === email ? 'Email taken' : 'Phone taken',
+          existingUser?.email === email
+            ? 'A user with this email already exists'
+            : 'A user with this phone number already exists',
         );
       }
 
@@ -55,11 +81,16 @@ export class UsersService {
 
       const user = await this.prisma.user.create({
         data: {
-          ...rest,
           email,
           phoneNumber,
           firstName,
+          lastName,
           password: hashedPassword,
+          ...(addresses && {
+            addresses: {
+              create: addresses,
+            },
+          }),
         },
         select: {
           id: true,
@@ -68,8 +99,27 @@ export class UsersService {
           lastName: true,
           role: true,
           createdAt: true,
+          addresses: true,
         },
       });
+
+      this.logger.log('User created successfully', user);
+
+      try {
+        this.logger.log('Attempting to send welcome email to queue...', {
+          email: user.email,
+          name: user.firstName,
+        });
+
+        await this.queueService.emit(ROUTING_KEYS.WELCOME_EMAIL, {
+          email: user.email,
+          name: user.firstName,
+        });
+
+        this.logger.log('Message successfully sent to queue');
+      } catch (err) {
+        this.logger.error('Failed to send welcome email to queue:', err);
+      }
 
       return user;
     } catch (err) {
@@ -81,7 +131,7 @@ export class UsersService {
   async findAll(query: UserQueryDto) {
     const { page = 1, limit = 10, role, search } = query;
 
-    this.logger.log('Logging query in user service', query);
+    console.log('Logging query in user service', query);
     this.logger.log('Logging skip in user service', page - 1 * limit);
     return await this.prisma.user.findMany({
       skip: (page - 1) * limit,
@@ -149,8 +199,54 @@ export class UsersService {
     return user;
   }
 
+  async createAddress(userId: string, address: CreateAddressDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Check if this user already has this exact address
+    const existingAddress = await this.prisma.address.findFirst({
+      where: {
+        AND: [
+          { longitude: address.longitude },
+          { latitude: address.latitude },
+          { street: address.street },
+          { city: address.city },
+          { userId: userId },
+        ],
+      },
+    });
+
+    if (existingAddress) {
+      throw new ConflictException(
+        'You already have this exact address registered',
+      );
+    }
+
+    const newAddress = await this.prisma.address.create({
+      data: {
+        ...address,
+        userId,
+      },
+    });
+
+    return newAddress;
+  }
+
   // ---- UPDATE ----
   async update(id: string, dto: UpdateUserDto) {
+    // Filter out any address data from the DTO
+    const userData: Omit<UpdateUserDto, 'addresses'> = Object.fromEntries(
+      Object.entries(dto).filter(([key]) => key !== 'addresses'),
+    );
+
     const existingUser = await this.prisma.user.findUnique({
       where: { id },
       select: { id: true },
@@ -160,13 +256,13 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    if (dto?.password) {
-      dto.password = await bcrypt.hash(dto.password, 10);
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
     }
 
     const user = await this.prisma.user.update({
       where: { id },
-      data: dto,
+      data: userData,
       select: {
         id: true,
         email: true,

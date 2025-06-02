@@ -8,9 +8,18 @@ import {
   Matches,
   NotContains,
   MaxLength,
+  ValidateNested,
+  IsArray,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { AddressDto } from './address.dto';
 
 export class CreateUserDto {
+  @ApiProperty({
+    example: 'example@gmail.com',
+    description: 'email of the user',
+  })
   @IsEmail()
   @IsNotEmpty({ message: 'Email must not be empty' })
   email: string;
@@ -32,6 +41,7 @@ export class CreateUserDto {
   @NotContains(' ', {
     message: 'Password must not contain spaces',
   })
+  @ApiProperty({ example: 'strongPassword123/', description: 'User password' })
   password: string;
 
   @IsString({ message: 'First name must be text' })
@@ -39,10 +49,12 @@ export class CreateUserDto {
   @MaxLength(50, {
     message: 'First name cannot exceed 50 characters',
   })
+  @ApiProperty({ example: 'Malik', description: 'First name of the user' })
   firstName: string;
 
   @IsString({ message: 'Last name must be text' })
   @IsNotEmpty({ message: 'Last name is required' })
+  @ApiProperty({ example: 'Ben', description: 'Last name of the user' })
   lastName: string;
 
   @IsString()
@@ -50,10 +62,17 @@ export class CreateUserDto {
   @Matches(/^\+?[\d\s\-()]{8,}$/, {
     message: 'Enter a valid phone number (e.g., +1234567890 or 123-456-7890)',
   })
+  @ApiProperty({ example: '+213659000000', description: 'Phone number' })
   phoneNumber: string;
 
-  @IsString({ message: 'Address must be text' })
-  @MaxLength(200)
+  @ApiProperty({
+    type: [AddressDto],
+    description: 'User addresses',
+    required: false,
+  })
   @IsOptional()
-  address?: string | null;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AddressDto)
+  addresses?: AddressDto[];
 }
