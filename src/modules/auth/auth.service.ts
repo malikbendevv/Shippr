@@ -1,6 +1,10 @@
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/shared/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -94,5 +98,16 @@ export class AuthService {
     });
 
     return { message: 'Logged out successfully' };
+  }
+
+  async changePassword(email: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user)
+      throw new NotFoundException(`User with email ${email} not found`);
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hashed },
+    });
   }
 }

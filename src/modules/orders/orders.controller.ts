@@ -30,7 +30,8 @@ export class OrdersController {
     description: 'Create Order',
   })
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.customer)
   create(@Body() createOrderDto: CreateOrderDto, @Req() req: Request) {
     return this.ordersService.create({
       ...createOrderDto,
@@ -76,8 +77,7 @@ export class OrdersController {
   @ApiBody({
     description: 'Requires `expectedVersion` for idempotent updates',
   })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -88,7 +88,7 @@ export class OrdersController {
     return this.ordersService.update({
       id,
       updateOrderDto,
-      customerId: req.user.sub,
+      userId: req.user.sub,
     });
   }
 }

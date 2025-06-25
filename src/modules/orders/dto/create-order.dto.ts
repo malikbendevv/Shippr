@@ -14,13 +14,21 @@ export class CreateOrderDto {
   @IsString()
   name: string;
 
+  @IsNotEmpty()
+  @IsString()
+  receiverFullName: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  receiverPhoneNumber: number;
+
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsNotEmpty()
   @IsString()
-  customerId?: string;
+  customerId: string;
 
   @IsNotEmpty()
   @IsString()

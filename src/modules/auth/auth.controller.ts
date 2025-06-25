@@ -14,6 +14,7 @@ import {
 import { AuthService } from './auth.service';
 
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/changePassword.dto';
 
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -37,17 +38,29 @@ export class AuthController {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      // secure: true,
-      sameSite: 'strict',
-      maxAge: 1 * 60 * 1000, // 15 minutes
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      // secure: true,
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+  }
+
+  @Post('changePassword')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password was changed successfully',
+  })
+  async changePassword(@Body() dto: ChangePasswordDto) {
+    await this.authService.changePassword(dto.email, dto.password);
+    return { message: 'Password was changed successfully' };
   }
 
   @Post('logout')
@@ -83,8 +96,8 @@ export class AuthController {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      // secure: true,
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
       maxAge: 1 * 60 * 1000, // 1 minute
     });
 
@@ -96,7 +109,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Test JWT guard' })
   @ApiResponse({ status: 200, description: 'Guard test successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async testGuard() {
+  testGuard() {
     console.log('Guard test successful - User is authenticated');
     return { message: 'Guard test successful' };
   }

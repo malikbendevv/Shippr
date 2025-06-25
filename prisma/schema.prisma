@@ -65,30 +65,33 @@ model Address {
 }
 
 model Order {
-  id                String      @id @default(uuid())
-  name              String
-  description       String?
-  price             Float
-  version           Int         @default(1)
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  version     Int     @default(1)
   // Customer relation
-  customer          User        @relation("CustomerOrders", fields: [customerId], references: [id])
-  customerId        String
+  customer    User    @relation("CustomerOrders", fields: [customerId], references: [id])
+  customerId  String
+
+  receiverFullName    String      @default("Full Name")
+  receiverPhoneNumber Float       @default(0000000)
   // Driver relation
-  driver            User?       @relation("DriverOrders", fields: [driverId], references: [id])
-  driverId          String?
+  driver              User?       @relation("DriverOrders", fields: [driverId], references: [id])
+  driverId            String?
   // Address relations
-  pickupAddress     Address     @relation("OrderPickupAddress", fields: [pickupAddressId], references: [id])
-  pickupAddressId   String
-  dropoffAddress    Address     @relation("OrderDropoffAddress", fields: [dropoffAddressId], references: [id])
-  dropoffAddressId  String
+  pickupAddress       Address     @relation("OrderPickupAddress", fields: [pickupAddressId], references: [id])
+  pickupAddressId     String
+  dropoffAddress      Address     @relation("OrderDropoffAddress", fields: [dropoffAddressId], references: [id])
+  dropoffAddressId    String
   // Order details
-  expectedVersion   Int?
-  status            OrderStatus @default(PENDING)
-  estimatedDistance Float?
-  estimatedDuration Float?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  archived          Boolean     @default(false)
+  expectedVersion     Int?
+  status              OrderStatus @default(PENDING)
+  estimatedDistance   Float?
+  estimatedDuration   Float?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  archived            Boolean     @default(false)
 
   @@index([customerId])
   @@index([driverId])
