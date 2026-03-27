@@ -43,6 +43,7 @@ export class UsersController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input data',
   })
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -54,10 +55,29 @@ export class UsersController {
     description: 'Array of users',
     type: [UserDto],
   })
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getUsers(@Query() query: UserQueryDto) {
     console.log('query', query);
-    return this.usersService.findAll(query);
+    const users = await this.usersService.findAll(query);
+    console.log({ users });
+    return users;
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user information' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Current user information retrieved successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authenticated',
+  })
+  async getCurrentUser(@Req() req: Request) {
+    return this.usersService.getById(req.user!.sub);
   }
 
   @ApiOperation({ summary: 'Get user by ID' })
@@ -126,22 +146,6 @@ export class UsersController {
     @Req() req: Request,
     @Body() createAddressDto: CreateAddressDto,
   ) {
-    return this.usersService.createAddress(req.user.sub, createAddressDto);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get current user information' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Current user information retrieved successfully',
-    type: UserDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'User not authenticated',
-  })
-  async getCurrentUser(@Req() req: Request) {
-    return this.usersService.getById(req.user.sub);
+    return this.usersService.createAddress(req.user!.sub, createAddressDto);
   }
 }

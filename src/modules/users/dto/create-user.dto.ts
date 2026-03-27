@@ -14,6 +14,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { AddressDto } from './address.dto';
+import { Role } from '@prisma/client';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -22,7 +23,7 @@ export class CreateUserDto {
   })
   @IsEmail()
   @IsNotEmpty({ message: 'Email must not be empty' })
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
@@ -42,7 +43,7 @@ export class CreateUserDto {
     message: 'Password must not contain spaces',
   })
   @ApiProperty({ example: 'strongPassword123/', description: 'User password' })
-  password: string;
+  password!: string;
 
   @IsString({ message: 'First name must be text' })
   @IsNotEmpty({ message: 'First name is required' })
@@ -50,12 +51,17 @@ export class CreateUserDto {
     message: 'First name cannot exceed 50 characters',
   })
   @ApiProperty({ example: 'Malik', description: 'First name of the user' })
-  firstName: string;
+  firstName!: string;
 
   @IsString({ message: 'Last name must be text' })
   @IsNotEmpty({ message: 'Last name is required' })
   @ApiProperty({ example: 'Ben', description: 'Last name of the user' })
-  lastName: string;
+  lastName!: string;
+
+  @IsString({ message: 'Role must be text' })
+  @IsNotEmpty({ message: 'Role is required' })
+  @ApiProperty({ example: 'driver', description: 'Role of the user' })
+  role!: Role;
 
   @IsString()
   @IsNotEmpty()
@@ -63,7 +69,7 @@ export class CreateUserDto {
     message: 'Enter a valid phone number (e.g., +1234567890 or 123-456-7890)',
   })
   @ApiProperty({ example: '+213659000000', description: 'Phone number' })
-  phoneNumber: string;
+  phoneNumber!: string;
 
   @ApiProperty({
     type: [AddressDto],

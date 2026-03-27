@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { JwtPayload } from '../types/jwt-payload';
@@ -22,17 +23,19 @@ declare module 'express' {
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private readonly logger = new Logger(JwtAuthGuard.name);
+  private readonly jwtAccessSecret: string;
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {
+    this.jwtAccessSecret =
+      this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
     const token = this.extractToken(request);
-
-    this.logger.debug('Cookies:', request.cookies);
-    this.logger.debug('Authorization header:', request.headers.authorization);
-    this.logger.debug('Extracted token:', token);
-    this.logger.debug('JWT Secret:', process.env.JWT_ACCESS_SECRET);
 
     if (!token) {
       this.logger.error('No token found in request');
@@ -40,11 +43,9 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      this.logger.debug('About to Verify the token:');
       const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: this.jwtAccessSecret,
       });
-      this.logger.debug('Token payload:', payload);
       request.user = payload;
     } catch (error: unknown) {
       const errorMessage =
@@ -57,9 +58,9 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractToken(request: Request): string | undefined {
-    const token: string =
-      request.cookies?.access_token ||
-      request.headers.authorization?.split(' ')[1];
-    return token ?? undefined;
+    return (
+      request.cookies?.access_token ??
+      request.headers.authorization?.split(' ')[1]
+    );
   }
 }

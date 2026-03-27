@@ -52,7 +52,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Enable CORS
-  app.enableCors({ origin: 'http://localhost:3000', credentials: true });
+  app.enableCors({
+    origin: ['http://localhost:3000', 'http://192.168.100.5:3000'],
+    credentials: true,
+  });
 
   // Serve static files from the uploads directory
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
@@ -64,7 +67,7 @@ async function bootstrap() {
 
 bootstrap()
   .then(() => {
-    console.log(`🚀 Application running on port ${process.env.PORT || 5000}`);
+    console.log(`🚀 Application running on port ${process.env.PORT || 3000}`);
   })
   .catch((err) => {
     console.error('❌ Application failed to start', err);

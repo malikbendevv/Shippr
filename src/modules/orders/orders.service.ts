@@ -40,7 +40,7 @@ export class OrdersService {
             userId: dto.customerId, // Ensure address belongs to customer
           },
         }),
-        tx.address.findUnique({
+        tx.address.findFirst({
           where: { id: dto.dropoffAddressId, userId: dto.customerId },
         }),
       ]);
@@ -49,14 +49,7 @@ export class OrdersService {
         throw new ForbiddenException('Pickup address does not belong to you');
       }
       if (!dropoffAddress) {
-        await tx.address.create({
-          data: {
-            ...dropoffAddress,
-          },
-          select: {
-            id: true,
-          },
-        });
+        throw new ForbiddenException('Dropoff address does not belong to you');
       }
 
       // 2. Proceed with order creation

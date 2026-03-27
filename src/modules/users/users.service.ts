@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 import { PrismaService } from 'src/shared/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 import * as bcrypt from 'bcrypt';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -26,14 +27,14 @@ type UserCreateResponse = {
   updatedAt?: Date;
   addresses?: Array<{
     id: string;
-    street: string;
-    street2?: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-    latitude?: number;
-    longitude?: number;
+    street?: string | null;
+    street2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+    country?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
   }>;
 };
 
@@ -49,8 +50,15 @@ export class UsersService {
   // Create
 
   async create(dto: CreateUserDto): Promise<UserCreateResponse> {
-    const { email, phoneNumber, firstName, lastName, password, addresses } =
-      dto;
+    const {
+      email,
+      phoneNumber,
+      firstName,
+      lastName,
+      password,
+      role,
+      addresses,
+    } = dto;
     this.logger.log('Creating user with email', email);
     try {
       const existingUser = await this.prisma.user.findFirst({
@@ -86,6 +94,7 @@ export class UsersService {
           firstName,
           lastName,
           password: hashedPassword,
+          role,
           ...(addresses && {
             addresses: {
               create: addresses,
@@ -129,38 +138,88 @@ export class UsersService {
   }
 
   async findAll(query: UserQueryDto) {
-    const { page = 1, limit = 10, role, search } = query;
+    const { page = 1, limit = 10, role, sort = 'createdAt', order = 'desc', search } = query;
 
-    console.log('Logging query in user service', query);
-    this.logger.log('Logging skip in user service', page - 1 * limit);
-    return await this.prisma.user.findMany({
+    this.logger.log('=== Starting findAll operation ===');
+    this.logger.log('Query parameters:', { page, limit, role, search });
+    this.logger.log('Calculated skip value:', (page - 1) * limit);
+
+    // Build the where clause
+    const whereClause = {
+      ...(role && { role: role as Role }),
+      ...(search && {
+        OR: [
+          {
+            firstName: { contains: search, mode: Prisma.QueryMode.insensitive },
+          },
+          {
+            lastName: { contains: search, mode: Prisma.QueryMode.insensitive },
+          },
+          { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        ],
+      }),
+    };
+
+    this.logger.log(
+      'Where clause for filtering:',
+      JSON.stringify(whereClause, null, 2),
+    );
+
+    // Get total count for pagination
+    this.logger.log('Fetching total count of users...');
+    const totalCount = await this.prisma.user.count({
+      where: whereClause,
+    });
+    this.logger.log('Total count of users:', totalCount);
+
+    // Get users with pagination
+    this.logger.log(
+      `Fetching users with pagination: skip=${(page - 1) * limit}, take=${limit}`,
+    );
+    const users = await this.prisma.user.findMany({
       skip: (page - 1) * limit,
       take: limit,
-      where: {
-        ...(role && { role: role as Role }),
-
-        ...(search && {
-          OR: search
-            ? [
-                { firstName: { contains: search, mode: 'insensitive' } },
-
-                { lastName: { contains: search, mode: 'insensitive' } },
-
-                { email: { contains: search, mode: 'insensitive' } },
-              ]
-            : undefined,
-        }),
-      },
-
+      where: whereClause,
       select: {
         id: true,
         email: true,
+        phoneNumber: true,
         firstName: true,
         lastName: true,
+        addresses: true,
         role: true,
+        createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sort]: order ?? 'asc' },
     });
+    this.logger.log(`Fetched ${users.length} users`);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const currentPage = page;
+    const usersFetched = users.length;
+
+    const paginationData = {
+      totalUsers: totalCount,
+      totalPages,
+      currentPage,
+      usersFetched,
+      limit,
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1,
+    };
+
+    this.logger.log(
+      'Fetched users:',
+      users.map((user) => user.email),
+    );
+    this.logger.log('Pagination metadata:', paginationData);
+    this.logger.log('=== findAll operation completed ===');
+
+    return {
+      users,
+      pagination: paginationData,
+    };
   }
 
   async findByEmail(email: string) {

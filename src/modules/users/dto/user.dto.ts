@@ -4,10 +4,10 @@ import { AddressResponseDto } from './address-response.dto';
 
 export class UserDto {
   @ApiProperty({ example: 'a1b2c3d4', description: 'Auto-generated UUID' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'user@example.com', description: 'Must be unique' })
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'John', required: false })
   firstName?: string;
@@ -27,7 +27,7 @@ export class UserDto {
     enum: ['customer', 'driver', 'admin'],
     default: 'customer',
   })
-  role: string;
+  role!: string;
 
   @ApiProperty({
     type: [AddressResponseDto],

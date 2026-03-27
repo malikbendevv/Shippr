@@ -3,10 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class OrderDto {
   @ApiProperty({ example: 'a1b2c3d4', description: 'Auto-generated UUID' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'Pizza', description: 'Name of the order' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'Pizza 4 season', required: false })
   description?: string;
@@ -36,7 +36,7 @@ export class OrderDto {
     ],
     default: 'PENDING',
   })
-  status: string;
+  status!: string;
 
   @ApiProperty({
     example: '500',

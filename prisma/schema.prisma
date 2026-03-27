@@ -38,9 +38,10 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  customerOrders Order[]   @relation("CustomerOrders")
-  driverOrders   Order[]   @relation("DriverOrders")
-  addresses      Address[]
+  customerOrders      Order[]               @relation("CustomerOrders")
+  driverOrders        Order[]               @relation("DriverOrders")
+  addresses           Address[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
   @@index([phoneNumber])
@@ -48,12 +49,12 @@ model User {
 
 model Address {
   id        String  @id @default(uuid())
-  street    String
+  street    String?
   street2   String?
-  city      String
-  state     String
-  zipCode   String
-  country   String  @default("Algeria")
+  city      String?
+  state     String?
+  zipCode   String?
+  country   String?
   latitude  Float?
   longitude Float?
   userId    String
@@ -96,4 +97,17 @@ model Order {
   @@index([customerId])
   @@index([driverId])
   @@index([status])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
