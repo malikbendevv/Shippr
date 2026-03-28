@@ -12,7 +12,15 @@ import { OrderStatus } from 'src/shared/types/order-status-enum';
 export class CreateOrderDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  receiverFullName!: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  receiverPhoneNumber!: number;
 
   @IsOptional()
   @IsString()
@@ -20,23 +28,23 @@ export class CreateOrderDto {
 
   @IsNotEmpty()
   @IsString()
-  customerId?: string;
+  customerId!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   driverId?: string;
 
   @IsNotEmpty()
   @IsNumber()
-  price: number;
+  price!: number;
 
   @IsNotEmpty()
   @IsString()
-  pickupAddressId: string;
+  pickupAddressId!: string;
 
   @IsNotEmpty()
   @IsString()
-  dropoffAddressId: string;
+  dropoffAddressId!: string;
 
   @IsOptional()
   @IsEnum(OrderStatus)
@@ -44,17 +52,17 @@ export class CreateOrderDto {
 
   @IsNotEmpty()
   @IsNumber()
-  estimatedDistance: number;
+  estimatedDistance!: number;
 
   @IsNotEmpty()
   @IsNumber()
-  estimatedDuration: number;
+  estimatedDuration!: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   expectedVersion?: number;
 
   @IsOptional()
   @IsBoolean()
-  archived: boolean;
+  archived?: boolean;
 }

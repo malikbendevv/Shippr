@@ -2,10 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AddressResponseDto {
   @ApiProperty({ example: 'uuid-123', description: 'Auto-generated UUID' })
-  id: string;
+  id!: string;
 
-  @ApiProperty({ example: '123 Main St', description: 'Street address' })
-  street: string;
+  @ApiProperty({
+    example: '123 Main St',
+    description: 'Street address',
+    required: false,
+  })
+  street?: string;
 
   @ApiProperty({
     example: 'Apt 4B',
@@ -15,20 +19,24 @@ export class AddressResponseDto {
   street2?: string;
 
   @ApiProperty({ example: 'New York', description: 'City name' })
-  city: string;
+  city!: string;
 
   @ApiProperty({ example: 'NY', description: 'State name' })
-  state: string;
+  state!: string;
 
-  @ApiProperty({ example: '10001', description: 'Postal code' })
-  zipCode: string;
+  @ApiProperty({
+    example: '10001',
+    description: 'Postal code',
+    required: false,
+  })
+  zipCode?: string;
 
   @ApiProperty({
     example: 'Algeria',
     description: 'Country name',
     default: 'Algeria',
   })
-  country: string;
+  country!: string;
 
   @ApiProperty({
     example: 36.7538,

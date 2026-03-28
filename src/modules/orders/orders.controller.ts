@@ -5,6 +5,7 @@ import {
   Body,
   Patch,
   Param,
+  Query,
   Req,
   UseGuards,
   HttpStatus,
@@ -30,11 +31,12 @@ export class OrdersController {
     description: 'Create Order',
   })
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.customer)
   create(@Body() createOrderDto: CreateOrderDto, @Req() req: Request) {
     return this.ordersService.create({
       ...createOrderDto,
-      customerId: req.user.sub,
+      customerId: req.user!.sub,
     });
   }
 
@@ -45,7 +47,7 @@ export class OrdersController {
   })
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Req() query: OrderQueryDto) {
+  findAll(@Query() query: OrderQueryDto) {
     return this.ordersService.findAll(query);
   }
 
@@ -76,8 +78,7 @@ export class OrdersController {
   @ApiBody({
     description: 'Requires `expectedVersion` for idempotent updates',
   })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -88,7 +89,7 @@ export class OrdersController {
     return this.ordersService.update({
       id,
       updateOrderDto,
-      customerId: req.user.sub,
+      userId: req.user!.sub,
     });
   }
 }

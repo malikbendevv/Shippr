@@ -1,14 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateAddressDto {
   @ApiProperty({
     example: '123 Main St',
     description: 'Street address',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  street: string;
+  street!: string;
 
   @ApiProperty({
     example: 'Apt 4B',
@@ -22,35 +23,38 @@ export class CreateAddressDto {
   @ApiProperty({
     example: 'New York',
     description: 'City name',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  city: string;
+  city!: string;
 
   @ApiProperty({
     example: 'NY',
     description: 'State name',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  state: string;
+  state!: string;
 
   @ApiProperty({
     example: '10001',
     description: 'Postal code',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  zipCode: string;
+  @IsOptional()
+  zipCode!: string;
 
   @ApiProperty({
     example: 'Algeria',
     description: 'Country name',
-    default: 'Algeria',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  country: string;
+  country!: string;
 
   @ApiProperty({
     example: 36.7538,
@@ -59,7 +63,7 @@ export class CreateAddressDto {
   })
   @IsNumber()
   @IsOptional()
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({
     example: 3.0588,
@@ -68,5 +72,5 @@ export class CreateAddressDto {
   })
   @IsNumber()
   @IsOptional()
-  longitude: number;
+  longitude!: number;
 }

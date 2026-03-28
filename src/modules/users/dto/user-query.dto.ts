@@ -20,6 +20,16 @@ export class UserQueryDto {
   @IsString()
   role?: string;
 
+  @ApiPropertyOptional({ example: 'asc' })
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
+  @ApiPropertyOptional({ example: 'asc' })
+  @IsOptional()
+  @IsString()
+  order?: 'asc' | 'desc';
+
   @ApiPropertyOptional({ example: 'john' })
   @IsOptional()
   @IsString()

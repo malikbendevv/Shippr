@@ -1,0 +1,15 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    - duration: 30 # warm-up
+      arrivalRate: 50
+    - duration: 30 # ramp-up
+      arrivalRate: 150
+    - duration: 30 # peak
+      arrivalRate: 300
+    - duration: 20 # spike
+      arrivalRate: 500
+scenarios:
+  - flow:
+      - get:
+          url: '/users'
